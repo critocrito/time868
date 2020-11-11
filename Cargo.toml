@@ -1,0 +1,5 @@
+[workspace]
+
+members = [
+    "packages/time868-simple",
+]
