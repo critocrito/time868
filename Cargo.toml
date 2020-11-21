@@ -4,4 +4,5 @@ members = [
     "time868-bench",
     "time868-simple",
     "time868-threaded",
+    "time868-async",
 ]
