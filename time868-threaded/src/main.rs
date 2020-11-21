@@ -2,22 +2,32 @@ use pico_args::Arguments;
 use rayon::ThreadPoolBuilder;
 use std::{
     io::Write,
-    net::{TcpListener, TcpStream},
+    net::{SocketAddr, TcpListener, TcpStream},
     process::exit,
     time::SystemTime,
 };
 
 struct Args {
     help: bool,
+    listen: SocketAddr,
     threads: usize,
 }
 
-pub const HELP: &str = r#"Benchmark RFC 868 implementations
+fn parse_socket_addr(s: &str) -> Result<SocketAddr, &'static str> {
+    match s.parse() {
+        Ok(socket_addr) => Ok(socket_addr),
+        Err(_) => Err("Failed to bind to socket."),
+    }
+}
+
+pub const HELP: &str = r#"A RFC868 time server.
 
 USAGE:
     time868-threaded [OPTIONS]
 
 OPTIONS:
+    -l, --listen SOCKET           Bind to specified socket address. Defaults to
+                                  127.0.0.1:37000.
     -t, --threads                 Set the number of threads to increase parallel
                                   requests. Each threads makes <COUNT> requests.
                                   Defaults to 1.
@@ -28,6 +38,9 @@ fn cli_args() -> Result<Args, pico_args::Error> {
     let mut args = Arguments::from_env();
     Ok(Args {
         help: args.contains(["-h", "--help"]),
+        listen: args
+            .value_from_fn(["-l", "--listen"], parse_socket_addr)
+            .unwrap_or_else(|_| "127.0.0.1:37000".parse().unwrap()),
         threads: args.opt_value_from_str(["-t", "--threads"])?.unwrap_or(1),
     })
 }
@@ -53,12 +66,17 @@ fn main() -> std::io::Result<()> {
 
     let threads = if args.threads < 1 { 1 } else { args.threads };
 
+    println!(
+        "Listening server on {:?} ({} threads).",
+        args.listen, threads
+    );
+
     let pool = ThreadPoolBuilder::new()
         .num_threads(threads)
         .build()
         .unwrap();
 
-    let listener = TcpListener::bind("127.0.0.1:37000").unwrap();
+    let listener = TcpListener::bind(args.listen).unwrap();
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
