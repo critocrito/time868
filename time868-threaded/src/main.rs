@@ -12,15 +12,17 @@ struct Args {
     threads: usize,
 }
 
-pub const HELP: &str = "Benchamrk RFC 868 implementations
+pub const HELP: &str = r#"Benchmark RFC 868 implementations
+
 USAGE:
     time868-threaded [OPTIONS]
+
 OPTIONS:
     -t, --threads                 Set the number of threads to increase parallel
                                   requests. Each threads makes <COUNT> requests.
                                   Defaults to 1.
     -h, --help                    Prints help information.
-";
+"#;
 
 fn cli_args() -> Result<Args, pico_args::Error> {
     let mut args = Arguments::from_env();
